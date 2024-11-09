@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculator with Registration and Login</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: #282c34;
+            color: #fff;
+        }
+        .lock-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            animation: fadeIn 1s ease forwards;
+        }
+        .form-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 250px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            display: none;
+        }
+        .unlock-input, .unlock-btn, .register-btn {
+            background: #61dafb;
+            border: none;
+            padding: 10px;
+            color: #282c34;
+            font-size: 18px;
+            border-radius: 5px;
+            margin-top: 10px;
+            text-align: center;
+            outline: none;
+            width: 100%;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        .unlock-btn:hover, .register-btn:hover {
+            transform: scale(1.05);
+        }
+        .calculator {
+            display: none;
+            grid-template-rows: auto 1fr;
+            background: #333;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            transform: scale(0.9);
+            transition: transform 0.3s;
+        }
+        .calculator.show {
+            display: grid;
+        }
+        .display {
+            background: #282c34;
+            color: #61dafb;
+            font-size: 2em;
+            padding: 20px;
+            text-align: right;
+        }
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            padding: 20px;
+            background: #444;
+        }
+        button {
+            background: #61dafb;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.5em;
+            color: #282c34;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        button:hover {
+            background: #51a8d1;
+            transform: scale(1.05);
+        }
+        button:active {
+            transform: scale(0.95);
+        }
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Lock Screen -->
+    <div class="lock-screen" id="lockScreen">
+        <!-- Login Section -->
+        <div class="form-section" id="loginSection" style="display: block;">
+            <input type="text" id="usernameInput" class="unlock-input" placeholder="Username">
+            <input type="password" id="passcodeInput" class="unlock-input" placeholder="Passcode" maxlength="4">
+            <button class="unlock-btn" onclick="attemptUnlock()">Unlock</button>
+            <button class="register-btn" onclick="showRegister()">Register</button>
+        </div>
+
+        <!-- Registration Section -->
+        <div class="form-section" id="registerSection">
+            <input type="text" id="newUsername" class="unlock-input" placeholder="New Username">
+            <input type="password" id="newPasscode" class="unlock-input" placeholder="New Passcode" maxlength="4">
+            <button class="register-btn" onclick="registerUser()">Create Account</button>
+            <button class="register-btn" onclick="showLogin()">Back to Login</button>
+        </div>
+    </div>
+
+    <!-- Calculator -->
+    <div class="calculator" id="calculator">
+        <div class="display" id="display">0</div>
+        <div class="buttons">
+            <button onclick="clearDisplay()">C</button>
+            <button onclick="deleteLast()">DEL</button>
+            <button onclick="appendToDisplay('/')">÷</button>
+            <button onclick="appendToDisplay('*')">×</button>
+            <button onclick="appendToDisplay('7')">7</button>
+            <button onclick="appendToDisplay('8')">8</button>
+            <button onclick="appendToDisplay('9')">9</button>
+            <button onclick="appendToDisplay('-')">−</button>
+            <button onclick="appendToDisplay('4')">4</button>
+            <button onclick="appendToDisplay('5')">5</button>
+            <button onclick="appendToDisplay('6')">6</button>
+            <button onclick="appendToDisplay('+')">+</button>
+            <button onclick="appendToDisplay('1')">1</button>
+            <button onclick="appendToDisplay('2')">2</button>
+            <button onclick="appendToDisplay('3')">3</button>
+            <button onclick="calculate()">=</button>
+            <button onclick="appendToDisplay('0')">0</button>
+            <button onclick="appendToDisplay('.')">.</button>
+        </div>
+    </div>
+
+    <script>
+        function showRegister() {
+            document.getElementById("loginSection").style.display = "none";
+            document.getElementById("registerSection").style.display = "block";
+        }
+
+        function showLogin() {
+            document.getElementById("registerSection").style.display = "none";
+            document.getElementById("loginSection").style.display = "block";
+        }
+
+        function hashPasscode(passcode) {
+            return btoa(passcode);
+        }
+
+        function registerUser() {
+            const newUsername = document.getElementById("newUsername").value;
+            const newPasscode = document.getElementById("newPasscode").value;
+            if (!newUsername || !newPasscode) {
+                alert("Please enter both a username and a passcode.");
+                return;
+            }
+            const users = JSON.parse(localStorage.getItem("users")) || [];
+            const existingUser = users.find(user => user.username === newUsername);
+            if (existingUser) {
+                alert("Username already exists!");
+                return;
+            }
+            users.push({ username: newUsername, passcode: hashPasscode(newPasscode) });
+            localStorage.setItem("users", JSON.stringify(users));
+            alert("Registration Successful! You can now log in.");
+            showLogin();
+        }
+
+        function attemptUnlock() {
+            const inputUsername = document.getElementById("usernameInput").value;
+            const inputPasscode = hashPasscode(document.getElementById("passcodeInput").value);
+            const users = JSON.parse(localStorage.getItem("users")) || [];
+            const user = users.find(user => user.username === inputUsername && user.passcode === inputPasscode);
+            if (user) {
+                document.getElementById("lockScreen").style.display = "none";
+                document.getElementById("calculator").classList.add("show");
+            } else {
+                alert("Incorrect Username or Passcode!");
+            }
+        }
+
+        let display = document.getElementById("display");
+
+        function appendToDisplay(value) {
+            if (display.innerText === "0") display.innerText = "";
+            display.innerText += value;
+        }
+
+        function clearDisplay() {
+            display.innerText = "0";
+        }
+
+        function deleteLast() {
+            display.innerText = display.innerText.slice(0, -1) || "0";
+        }
+
+        function calculate() {
+            try {
+                const expression = display.innerText.replace("÷", "/").replace("×", "*");
+                const result = Function('"use strict";return (' + expression + ')')();
+                display.innerText = result || "0";
+            } catch {
+                display.innerText = "Error";
+            }
+        }
+    </script>
+
+</body>
+</html>
